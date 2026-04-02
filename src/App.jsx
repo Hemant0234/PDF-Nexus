@@ -62,8 +62,8 @@ function App() {
       <Sidebar activeTool={activeTool} onToolSelect={handleToolSelect} />
       <div className="flex-1 flex flex-col relative md:ml-64 focus-layout transition-all duration-300">
         <Header />
-        <main className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className={`flex-1 ${activeTool ? 'overflow-hidden' : 'overflow-y-auto p-6 lg:p-8'} custom-scrollbar`}>
+          <div className={`${activeTool ? 'h-full' : 'max-w-7xl mx-auto h-full'}`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTool ? activeTool : 'dashboard'}
