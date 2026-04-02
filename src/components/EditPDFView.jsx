@@ -119,8 +119,13 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
 
   useEffect(() => {
     if (editing && textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.select();
+      const ta = textareaRef.current;
+      // Focus and select all text immediately
+      ta.focus();
+      // Small delay helps cross-browser reliability for .select()
+      setTimeout(() => {
+        if (ta) ta.select();
+      }, 50);
     }
   }, [editing]);
 
@@ -151,7 +156,14 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
 
   return (
     <div
-      onClick={(e) => { e.stopPropagation(); onSelect(block.id); }}
+      onClick={(e) => { 
+        e.stopPropagation(); 
+        if (isSelected && !editing && !deleted) {
+          setEditing(true);
+        } else {
+          onSelect(block.id); 
+        }
+      }}
       onDoubleClick={handleDoubleClick}
       style={{
         position:   'absolute',
@@ -182,6 +194,7 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
           onChange={(e) => onChange(block.id, e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
+          onFocus={(e) => e.target.select()}
           style={{
             position:   'absolute',
             top: 0, left: 0,
@@ -560,13 +573,28 @@ export default function EditPDFView({ onBack }) {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 overflow-auto bg-gray-950 custom-scrollbar" style={{ padding: '48px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 56 }} onClick={() => setSelectedId(null)}>
-          {pages.map((pg, i) => (
-            <div key={i} id={`page-${i}`}>
-              <PageEditor pageData={pg} edits={edits} selectedId={selectedId} tool={tool} onSelect={setSelectedId} onChange={handleChange} onDelete={handleDelete} onAddText={handleAddText} />
-            </div>
-          ))}
-          <div style={{ height: 60 }} />
+        <div className="flex-1 overflow-auto bg-gray-950 custom-scrollbar scroll-smooth" onClick={() => setSelectedId(null)}>
+          <div className="min-h-full w-full py-12 px-8 flex flex-col items-center gap-14">
+            {pages.map((pg, i) => (
+              <div 
+                key={i} 
+                id={`page-${i}`} 
+                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+              >
+                <PageEditor 
+                  pageData={pg} 
+                  edits={edits} 
+                  selectedId={selectedId} 
+                  tool={tool} 
+                  onSelect={setSelectedId} 
+                  onChange={handleChange} 
+                  onDelete={handleDelete} 
+                  onAddText={handleAddText} 
+                />
+              </div>
+            ))}
+            <div className="h-20" />
+          </div>
         </div>
 
         {/* Info panel */}
