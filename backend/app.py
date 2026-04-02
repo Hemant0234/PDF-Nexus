@@ -26,9 +26,28 @@ except ImportError:
 
 app = Flask(__name__)
 
-# Allow requests from any origin in production (restrict via env var if needed)
-allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*')
-CORS(app, resources={r"/*": {"origins": allowed_origins}})
+# ── CORS — allow all origins (works on Render, Vercel, localhost) ──────────
+# Using manual after_request instead of Flask-CORS for maximum reliability
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin']  = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    return response
+
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    """Handle preflight CORS requests"""
+    from flask import make_response
+    response = make_response()
+    response.headers['Access-Control-Allow-Origin']  = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response.headers['Access-Control-Max-Age']       = '86400'
+    return response, 200
+
+
 
 # Configuration
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'temp_uploads')
