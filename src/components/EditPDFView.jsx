@@ -111,7 +111,7 @@ export function resolveFont(block) {
 // ═══════════════════════════════════════════════════════════════════════════
 //  TextBlock component
 // ═══════════════════════════════════════════════════════════════════════════
-const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, originalText }) => {
+const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, originalText, imgW, imgH }) => {
   const [editing, setEditing] = useState(isNew);
   const textareaRef = useRef(null);
 
@@ -119,13 +119,8 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
 
   useEffect(() => {
     if (editing && textareaRef.current) {
-      const ta = textareaRef.current;
-      // Focus and select all text immediately
-      ta.focus();
-      // Small delay helps cross-browser reliability for .select()
-      setTimeout(() => {
-        if (ta) ta.select();
-      }, 50);
+      textareaRef.current.focus();
+      textareaRef.current.select();
     }
   }, [editing]);
 
@@ -154,17 +149,23 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
     margin: 0, padding: 0,
   };
 
+  // ── Responsive positioning calculation ──
+  // These are based on the original image dimensions from the backend
+  const leftPct   = (block.px_x / (imgW || 1)) * 100;
+  const topPct    = (block.px_y / (imgH || 1)) * 100;
+  const widthPct  = (block.px_w / (imgW || 1)) * 100;
+  const heightPct = (block.px_h / (imgH || 1)) * 100;
+
   return (
     <div
       onClick={(e) => { e.stopPropagation(); onSelect(block.id); }}
       onDoubleClick={handleDoubleClick}
-
       style={{
         position:   'absolute',
-        left:       block.px_x,
-        top:        block.px_y,
-        width:      Math.max(block.px_w + 4, 30),
-        height:     Math.max(block.px_h + 2, block.font_size_px || 14),
+        left:       `${leftPct}%`,
+        top:        `${topPct}%`,
+        width:      `${widthPct}%`,
+        minHeight:  `${heightPct}%`,
         zIndex:     isSelected ? 30 : (showText ? 20 : 10),
         cursor:     deleted ? 'default' : 'text',
         background: deleted
@@ -188,7 +189,6 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
           onChange={(e) => onChange(block.id, e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          onFocus={(e) => e.target.select()}
           style={{
             position:   'absolute',
             top: 0, left: 0,
@@ -308,6 +308,8 @@ const PageEditor = ({ pageData, edits, selectedId, tool, onSelect, onChange, onD
           onChange={onChange}
           onDelete={onDelete}
           originalText={pageData.blocks.find(b => b.id === block.id)?.text}
+          imgW={pageData.img_w}
+          imgH={pageData.img_h}
         />
       ))}
 
@@ -321,6 +323,8 @@ const PageEditor = ({ pageData, edits, selectedId, tool, onSelect, onChange, onD
           onChange={onChange}
           onDelete={onDelete}
           originalText={null}
+          imgW={pageData.img_w}
+          imgH={pageData.img_h}
         />
       ))}
 
@@ -567,28 +571,13 @@ export default function EditPDFView({ onBack }) {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 overflow-auto bg-gray-950 custom-scrollbar scroll-smooth" onClick={() => setSelectedId(null)}>
-          <div className="min-h-full w-full py-12 px-8 flex flex-col items-center gap-14">
-            {pages.map((pg, i) => (
-              <div 
-                key={i} 
-                id={`page-${i}`} 
-                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
-              >
-                <PageEditor 
-                  pageData={pg} 
-                  edits={edits} 
-                  selectedId={selectedId} 
-                  tool={tool} 
-                  onSelect={setSelectedId} 
-                  onChange={handleChange} 
-                  onDelete={handleDelete} 
-                  onAddText={handleAddText} 
-                />
-              </div>
-            ))}
-            <div className="h-20" />
-          </div>
+        <div className="flex-1 overflow-auto bg-gray-950 custom-scrollbar" style={{ padding: '48px 60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 56 }} onClick={() => setSelectedId(null)}>
+          {pages.map((pg, i) => (
+            <div key={i} id={`page-${i}`}>
+              <PageEditor pageData={pg} edits={edits} selectedId={selectedId} tool={tool} onSelect={setSelectedId} onChange={handleChange} onDelete={handleDelete} onAddText={handleAddText} />
+            </div>
+          ))}
+          <div style={{ height: 60 }} />
         </div>
 
         {/* Info panel */}
