@@ -156,15 +156,9 @@ const TextBlock = ({ block, isNew, isSelected, onSelect, onChange, onDelete, ori
 
   return (
     <div
-      onClick={(e) => { 
-        e.stopPropagation(); 
-        if (isSelected && !editing && !deleted) {
-          setEditing(true);
-        } else {
-          onSelect(block.id); 
-        }
-      }}
+      onClick={(e) => { e.stopPropagation(); onSelect(block.id); }}
       onDoubleClick={handleDoubleClick}
+
       style={{
         position:   'absolute',
         left:       block.px_x,
