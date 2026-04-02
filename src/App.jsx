@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toaster, toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
@@ -15,12 +15,32 @@ import EditPDFView from './components/EditPDFView';
 function App() {
   const [activeTool, setActiveTool] = useState(null);
 
+  // Browser Back Button Support
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // Set active tool based on history state
+      setActiveTool(event.state?.toolId || null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleToolSelect = (toolId) => {
-    setActiveTool(toolId);
+    if (toolId !== activeTool) {
+      // Push to browser history when selecting a tool
+      window.history.pushState({ toolId }, '', '');
+      setActiveTool(toolId);
+    }
   };
 
   const handleBackToDashboard = () => {
-    setActiveTool(null);
+    // If we're coming from a tool, a back action should go to the dashboard
+    if (window.history.state?.toolId) {
+      window.history.back();
+    } else {
+      setActiveTool(null);
+    }
   };
 
   const renderActiveView = () => {
